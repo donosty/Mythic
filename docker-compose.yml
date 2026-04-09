@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:15
+    container_name: mythic_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-admin_superheroes}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secreto_coleccionable}
+      POSTGRES_DB: ${DB_NAME:-tienda_db}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./backend/sql:/docker-entrypoint-initdb.d
+
+  backend:
+    build: ./backend
+    container_name: mythic_backend
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@db:5433/${DB_NAME}
+    depends_on:
+      - db
+    networks:
+      - mythic
+
+
+  frontend:
+    build: ./frontend
+    container_name: mythic_front
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    stdin_open: true
+    depends_on:
+      - backend
+    networks:
+      - mythic
+
+networks:
+  mythic:
+  
+
+volumes:
+  pg_data:
